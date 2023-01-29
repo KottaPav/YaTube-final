@@ -87,11 +87,15 @@ class ProjectViewTests(TestCase):
 
     def test_url_authorized_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
-        address = reverse('posts:post_create')
-        template = 'posts/post_create.html'
-        response = self.authorized_client.get(address)
-        self.assertTemplateUsed(response, template)
-        self.assertEqual(response.status_code, 200)
+        templates_url_names = {
+            reverse('posts:post_create'): 'posts/post_create.html',
+            reverse('posts:follow_index'): 'posts/follow.html',
+        }
+        for address, template in templates_url_names.items():
+            with self.subTest(template=template):
+                response = self.authorized_client.get(address)
+                self.assertTemplateUsed(response, template)
+                self.assertEqual(response.status_code, 200)
 
     def test_url_author_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -248,7 +252,7 @@ class PaginatorViewsTest(TestCase):
         cache.clear()
         pages = (reverse('posts:index'),
                  reverse('posts:profile',
-                         kwargs={'username': f'{self.author}'}),
+                         kwargs={'username': f'{self.author.username}'}),
                  reverse('posts:group_list',
                          kwargs={'slug': f'{self.group.slug}'}))
         for page in pages:
