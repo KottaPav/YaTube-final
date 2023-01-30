@@ -130,10 +130,11 @@ class PostFormTests(TestCase):
             posts_count + 1,
         )
 
-    def test_authorized_user_can_comment(self):
+    def test_guest_user_cannot_comment(self):
         """Комментировать посты может только авторизованный пользователь."""
         form_data = {
-            'text': 'Тестовый коммент',
+            'text': 'Комментарий от неавторизованного пользователя',
+
         }
         response = self.guest_client.post(
             reverse('posts:add_comment',
@@ -142,9 +143,10 @@ class PostFormTests(TestCase):
             follow=True
         )
         self.assertRedirects(response, '/auth/login/?next=/posts/1/comment/')
-        self.assertTrue(
-            Post.objects.filter(
-                text=self.post.text,
+        self.assertFalse(
+            Comment.objects.filter(
+                post=self.post,
+                text=form_data['text']
             ).exists()
         )
 
@@ -166,9 +168,5 @@ class PostFormTests(TestCase):
         self.assertEqual(Comment.objects.count(), comments_count + 1)
         new_comment = Comment.objects.latest('pub_date')
         self.assertEqual(new_comment.author, self.user)
-        self.assertTrue(
-            Post.objects.filter(
-                text=self.post.text,
-                comments=1
-            ).exists()
-        )
+        self.assertEqual(new_comment.text, form_data['text'])
+        self.assertEqual(new_comment.post, self.post)
